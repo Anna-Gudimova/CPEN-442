@@ -5,6 +5,7 @@ __author__ = 'andrew'
 from crypto import encrypt, decrypt, hash
 from gui import Gui
 from messenger import Messenger
+import socket
 
 
 # this class holds the state of the program
@@ -36,6 +37,17 @@ class SessionManager:
 
 if __name__ == "__main__":
     print("This is the main entry point")
+
+    # connect to test_server, testing Client messenger send/receive
+    host_ip = '127.0.0.1'
+    port = 12345
+    messenger = Messenger(host_ip, port)
+    # connect to host
+    messenger.be_a_client()
+    messenger.send_msg(b"Hello World")
+    response = messenger.receive_msg()
+    print(response)
+
     lassie = SessionManager()
     gui = Gui(lassie)
     gui.run()
