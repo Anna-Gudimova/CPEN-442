@@ -36,8 +36,9 @@ class Messenger:
         return b''.join(chunks)
 
     def be_a_server(self):
-        self.s.bind(self.ip_address, self.port)
+        self.s.bind(('', self.port))
         self.s.listen()
+        # TODO: create accept loop. Once a "secure" client mutual authenticates, then become_a_client
         pass
 
     def be_a_client(self):
