@@ -13,7 +13,7 @@ class Messenger:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             print("socket creation successful")
         except socket.error as err:
-            print("socket creation failed: %s" %(err))
+            print("socket creation failed: %s".format(err))
 
     def send_msg(self, msg):
         # return True if message is successfully sent
@@ -37,14 +37,14 @@ class Messenger:
 
     def be_a_server(self):
         self.s.bind(('', self.port))
-        self.s.listen()
+        self.s.listen(5)
         # TODO: create accept loop. Once a "secure" client mutual authenticates, then become_a_client
         while True:
             c, addr = self.s.accept()
             print("Got connection from ", addr)
 
             data = c.recv(1024)
-            c.send(b"Thank you for connecting %s" %(data))
+            c.send(bytes("Thank you for connecting {}".format(data), 'ascii'))
 
             print("server sent thank you message")
             c.close()
@@ -53,7 +53,7 @@ class Messenger:
         try:
             self.s.connect((self.ip_address, self.port))
         except socket.error as err:
-            print("socket connect failed %s" %(err))
+            print(bytes("socket connect failed {}".format(err), 'ascii'))
 
 
     def tear_down(self):

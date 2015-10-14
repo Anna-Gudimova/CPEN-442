@@ -2,12 +2,15 @@ __author__ = 'andrew'
 
 # run with python 3.4.3
 
+import argparse
 from crypto import encrypt, decrypt, hash
 from gui import Gui
 from messenger import Messenger
 import socket
 import sys
 
+MODE_CLIENT = 'c'
+MODE_SERVER = 's'
 
 # this class holds the state of the program
 class SessionManager:
@@ -37,30 +40,27 @@ class SessionManager:
         return False
 
 if __name__ == "__main__":
-    print("This is the main entry point")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('mode', choices=[MODE_CLIENT, MODE_SERVER], help='Which mode to run the program in - "%s" for '
+                        'client and "%s" for server'.format(MODE_CLIENT, MODE_SERVER))
+    args = parser.parse_args()
 
     ## TEST: connect to test_server, testing Client messenger send/receive
     host_ip = '127.0.0.1'
     port = 12345
     messenger = Messenger(host_ip, port)
 
-    ## Determine if client or server
-    print("Argument List: ", str(sys.argv))
-    if len(sys.argv) < 2:
-        print("Please specify either 'client: -c' or 'server: -s'")
-        exit()
-    elif sys.argv[1] == "-c":
+    if args.mode == MODE_CLIENT:
         print("you are a client")
         messenger.be_a_client()
         messenger.send_msg(b"Alice, Ra")
         response = messenger.receive_msg()
         print(response)
-    elif sys.argv[1] == "-s":
+    elif args.mode == MODE_SERVER:
         print("you are a server")
         messenger.be_a_server()
     else:
-        print("option: " + sys.argv[1] + " not available, try again")
-        exit()
+        raise Exception("We should never get here! Unexpected cli mode arg %s".format(args.mode))
 
     #lassie = SessionManager()
     #gui = Gui(lassie)

@@ -24,7 +24,7 @@ while True:
     print("Got connection from ", addr)
 
     data = c.recv(1024)
-    c.send(b"Thank you for connecting %s" %(data))
+    c.send(bytes("Thank you for connecting {}".format(data), 'ascii'))
 
     print("server sent thank you message")
     c.close()
