@@ -39,7 +39,15 @@ class Messenger:
         self.s.bind(('', self.port))
         self.s.listen()
         # TODO: create accept loop. Once a "secure" client mutual authenticates, then become_a_client
-        pass
+        while True:
+            c, addr = self.s.accept()
+            print("Got connection from ", addr)
+
+            data = c.recv(1024)
+            c.send(b"Thank you for connecting %s" %(data))
+
+            print("server sent thank you message")
+            c.close()
 
     def be_a_client(self):
         try:
