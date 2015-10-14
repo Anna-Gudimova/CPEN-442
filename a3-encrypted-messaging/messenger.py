@@ -33,9 +33,12 @@ class Messenger:
 
     def recv(self):
         # read in any data
-        readable, _, _ = select([self._s], [], [], 0.01)
-        if len(readable) > 0:
-            chunk = readable[0].recv(self.BUFFER_SIZE)
+        rlist, _, _ = select([self._s], [], [], 0.01)
+        if len(rlist) > 0:
+            chunk = rlist[0].recv(self.BUFFER_SIZE)
+            if chunk == b'':
+                rlist[0].close()
+                raise RuntimeError("socket closed")
             self._raw_received += chunk.decode(self.ENCODING)
 
         # still looking for a header

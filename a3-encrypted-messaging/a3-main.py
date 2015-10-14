@@ -16,14 +16,19 @@ MESSAGE_ENCODING = 'utf-8'
 # this class holds the state of the program
 class SessionManager:
     def __init__(self, port, ip_address=None):
-        self.port = port
-        self.ip_address = ip_address
         # can be either a server or client. if ip_address=None, be a server on port. Otherwise, try to connect to
         # ip_address:port
+        self.port = port
+        self.ip_address = ip_address
 
-        self._messenger = self._get_messenger()
+        self._messenger = None
+        self.reset_messenger()
 
-    def _get_messenger(self):
+    def reset_messenger(self):
+        if self._messenger is not None:
+            self._messenger.close()
+            self._messenger = None
+
         # AF_INET = ipv4, SOCK_STREAM = tcp
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -40,7 +45,7 @@ class SessionManager:
             # todo: authenticate client, start communication loop with authenticated client
             # messenger = self.authenticate_as_server(client)
 
-            m = Messenger(session_socket)
+            self._messenger = Messenger(session_socket)
         else:
             # client init: specify ip address and port to try to ping
             s.connect((self.ip_address, self.port))
@@ -49,8 +54,7 @@ class SessionManager:
             # messenger = self.authenticate_as_client(server)
 
             m = Messenger(s)
-
-        return m
+            self._messenger = m
 
     def send(self, msg):
         # if self.is_secure():
@@ -65,6 +69,9 @@ class SessionManager:
 
     def is_secure(self):
         return False
+
+    def close(self):
+        self._messenger.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -81,11 +88,16 @@ if __name__ == "__main__":
         session.send("Alice, Ra")
         response = session.recv()
         print(response)
+        session.close()
     elif args.mode == MODE_SERVER:
         session = SessionManager(port)
         while session is not None:  # the gui should be spamming this
-            msg_in = session.recv()
-            if msg_in is not None:
-                session.send('hello {}'.format(msg_in))
+            try:
+                msg_in = session.recv()
+                if msg_in is not None:
+                    session.send('hello {}'.format(msg_in))
+            except Exception as e:
+                print("exception: {}".format(e))
+                session.reset_messenger()
     else:
         raise Exception("We should never get here! Unexpected cli mode arg %s".format(args.mode))
