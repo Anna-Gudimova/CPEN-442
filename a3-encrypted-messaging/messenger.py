@@ -1,5 +1,6 @@
 __author__ = 'andrew'
 
+import logging
 import re
 from select import select
 
@@ -9,13 +10,13 @@ class Messenger:
     # sends/receives messages of text with encoded header describing message size
     BUFFER_SIZE = 2048
     ENCODING = 'utf-8'
-    # todo: add escape sequence to not confuse HEADER_SUFFIX found in messages
     HEADER_SUFFIX = '|'  # expressed in regex
 
     def __init__(self, socket):
         self._s = socket
         self._raw_received = ''
         self._next_msg_size = -1
+        self.log = logging.getLogger(__name__)
 
     def send(self, msg):
         # msg is some string (not bytes)
@@ -30,6 +31,7 @@ class Messenger:
             if sent == 0:
                 raise RuntimeError("socket send connection issue")
             sent_len += sent  # how much of the message we have sent
+        self.log.info("sent " + raw_msg.decode(self.ENCODING))
 
     def recv(self):
         # read in any data
@@ -43,7 +45,6 @@ class Messenger:
 
         # still looking for a header
         if self._next_msg_size < 0:
-            # TODO: parse self._raw_received for header and extract expected message size..
             match = re.search('(?P<length>[\d]+)' + self.HEADER_SUFFIX, self._raw_received)
             if match.group('length') is not None:
                 self._next_msg_size = int(match.group('length'))
@@ -53,6 +54,7 @@ class Messenger:
             msg = self._raw_received[:self._next_msg_size]
             self._raw_received = self._raw_received[self._next_msg_size:]
             self._next_msg_size = -1
+            self.log.info("recv " + msg)
             return msg
         return None
 
