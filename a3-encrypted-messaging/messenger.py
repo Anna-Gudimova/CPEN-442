@@ -44,7 +44,7 @@ class Messenger:
             print("Got connection from ", addr)
 
             data = c.recv(1024)
-            c.send(bytes("Thank you for connecting {}".format(data), 'ascii'))
+            c.send(b"Thank you for connecting, " + data)
 
             print("server sent thank you message")
             c.close()
@@ -53,8 +53,5 @@ class Messenger:
         try:
             self.s.connect((self.ip_address, self.port))
         except socket.error as err:
-            print(bytes("socket connect failed {}".format(err), 'ascii'))
+            print("socket connect failed: {}".format(err))
 
-
-    def tear_down(self):
-        self.close()
