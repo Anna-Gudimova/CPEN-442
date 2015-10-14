@@ -2,54 +2,102 @@ __author__ = 'andrew'
 
 # run with python 3.4.3
 
+import argparse
 from crypto import encrypt, decrypt, hash
-from gui import Gui
 from messenger import Messenger
 import socket
+from threading import Thread
 
+MODE_CLIENT = 'c'
+MODE_SERVER = 's'
+
+MESSAGE_ENCODING = 'utf-8'
 
 # this class holds the state of the program
 class SessionManager:
-    def __init__(self):
-        # define member variables here
-        self.messenger = None  # some class to do network communications
-        self.session_key = None
-        self.master_key = None  # this doesn't really need to be a member variable, but whatever
+    def __init__(self, port, ip_address=None):
+        # can be either a server or client. if ip_address=None, be a server on port. Otherwise, try to connect to
+        # ip_address:port
+        self.port = port
+        self.ip_address = ip_address
 
-    def start_client(self, master_key, other_networking_args):
-        self.messenger = Messenger(other_networking_args)
+        self._messenger = None
+        self.reset_messenger()
 
-    def start_server(self, master_key, other_networking_args):
-        pass
+    def reset_messenger(self):
+        if self._messenger is not None:
+            self._messenger.close()
+            self._messenger = None
 
-    def send_msg(self, msg):
-        if self.is_secure():
-            encrypt(msg)
-            self.messenger.send_msg(msg)
+        # AF_INET = ipv4, SOCK_STREAM = tcp
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # assuming we can use the same "client socket" for both reading and writing
+        if self.ip_address is None:
+            # server init: listen to port for a connection
+            s.bind(('', port))
+            s.listen(1) # listen for only one connection
+
+            session_socket, addr = s.accept()
+
+            print("Accepted connection from ", addr)
+
+            # todo: authenticate client, start communication loop with authenticated client
+            # messenger = self.authenticate_as_server(client)
+
+            self._messenger = Messenger(session_socket)
         else:
-            raise Exception("Session not securely initialized")
+            # client init: specify ip address and port to try to ping
+            s.connect((self.ip_address, self.port))
 
-    def receive_msg(self):
-        pass
-    
+            # todo: authenticate server, start communication loop with authenticated server
+            # messenger = self.authenticate_as_client(server)
+
+            m = Messenger(s)
+            self._messenger = m
+
+    def send(self, msg):
+        # if self.is_secure():
+        #     encrypt(msg)
+        #     self._messenger.send(msg)
+        # else:
+        #     raise Exception("Session not securely initialized")
+        self._messenger.send(msg)
+
+    def recv(self):
+        return self._messenger.recv()
+
     def is_secure(self):
         return False
 
-if __name__ == "__main__":
-    print("This is the main entry point")
+    def close(self):
+        self._messenger.close()
 
-    # connect to test_server, testing Client messenger send/receive
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('mode', choices=[MODE_CLIENT, MODE_SERVER], help='Which mode to run the program in - "%s" for '
+                        'client and "%s" for server'.format(MODE_CLIENT, MODE_SERVER))
+    args = parser.parse_args()
+
+    ## TEST: connect to test_server, testing Client messenger send/receive
     host_ip = '127.0.0.1'
     port = 12345
-    messenger = Messenger(host_ip, port)
-    # connect to host
-    messenger.be_a_client()
-    messenger.send_msg(b"Hello World")
-    response = messenger.receive_msg()
-    print(response)
 
-    lassie = SessionManager()
-    gui = Gui(lassie)
-    gui.run()
-    print("program done.")
-
+    if args.mode == MODE_CLIENT:
+        session = SessionManager(port, host_ip)
+        session.send("Alice, Ra")
+        response = session.recv()
+        print(response)
+        session.close()
+    elif args.mode == MODE_SERVER:
+        session = SessionManager(port)
+        while session is not None:  # the gui should be spamming this
+            try:
+                msg_in = session.recv()
+                if msg_in is not None:
+                    session.send('hello {}'.format(msg_in))
+            except Exception as e:
+                print("exception: {}".format(e))
+                session.reset_messenger()
+    else:
+        raise Exception("We should never get here! Unexpected cli mode arg %s".format(args.mode))
