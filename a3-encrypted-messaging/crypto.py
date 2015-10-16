@@ -1,6 +1,7 @@
 from Crypto.Cipher import AES
 from os import urandom
 import hashlib
+import base64
 
 Key_Master = urandom(16)
 
@@ -9,11 +10,14 @@ def generate_init_vector():
     return iv
 
 def encrypt(key, msg, iv):
+    padded_msg = pad_message(msg)
     encrypter = AES.new(key, AES.MODE_CBC, iv)
-    cipher_text = encrypter.encrypt(msg)
+    # base64 to convert bytes to string. Messenger.send expects string
+    cipher_text = base64.b64encode(iv + encrypter.encrypt(padded_msg))
     return cipher_text
 
 def decrypt(key, cipher, iv):
+    print("decrypt: "+str(len(cipher)))
     decrypter = AES.new(key, AES.MODE_CBC, iv)
     plain_text = decrypter.decrypt(cipher)
     return plain_text
@@ -22,7 +26,6 @@ def pad_message(msg):
     pad_len = 16-len(msg)%16
     print("strlen: "+str(len(msg)))
     pad_msg = msg.zfill(pad_len+len(msg))
-    print("Padded msg: "+pad_msg)
     return pad_msg
 
 def generate_keystream(key):
@@ -50,7 +53,6 @@ def quick_test():
     decipher = decrypt(keystream, cipher, IV)
     print("Decrypted: "+str(decipher))
 
-quick_test()
 
 
 

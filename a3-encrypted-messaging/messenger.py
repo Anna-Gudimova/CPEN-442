@@ -2,6 +2,13 @@ __author__ = 'andrew'
 
 import re
 from select import select
+from crypto import encrypt, decrypt, generate_keystream, generate_init_vector
+
+## TODO: Figure out ideal place for following lines (coming from GUI)
+## IV generated for each new msg..decrypt requires same IV
+key = "something Ildar will write"
+keystream = generate_keystream(key)
+iv = generate_init_vector()
 
 
 # provides a queue of messages for the
@@ -22,11 +29,12 @@ class Messenger:
         # header describes message length
         header = str(len(msg)) + self.HEADER_SUFFIX
         raw_msg = (header + msg).encode(self.ENCODING)
+        cipher_msg = encrypt(keystream, raw_msg, iv)
 
-        total_len = len(raw_msg)
+        total_len = len(cipher_msg)
         sent_len = 0
         while sent_len < total_len:
-            sent = self._s.send(raw_msg[sent_len:])
+            sent = self._s.send(cipher_msg[sent_len:])
             if sent == 0:
                 raise RuntimeError("socket send connection issue")
             sent_len += sent  # how much of the message we have sent
@@ -53,6 +61,7 @@ class Messenger:
             msg = self._raw_received[:self._next_msg_size]
             self._raw_received = self._raw_received[self._next_msg_size:]
             self._next_msg_size = -1
+            ##TODO send extrating header and decrypt requires msg that is multiple of 16bytes..how to address this?
             return msg
         return None
 

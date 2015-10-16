@@ -3,7 +3,7 @@ __author__ = 'andrew'
 # run with python 3.4.3
 
 import argparse
-from crypto import encrypt, decrypt, hash
+from crypto import encrypt, decrypt, generate_keystream, generate_init_vector
 from messenger import Messenger
 import socket
 from threading import Thread
@@ -82,10 +82,11 @@ if __name__ == "__main__":
     ## TEST: connect to test_server, testing Client messenger send/receive
     host_ip = '127.0.0.1'
     port = 12345
+    raw_msg = "Alice, Ra"
 
     if args.mode == MODE_CLIENT:
         session = SessionManager(port, host_ip)
-        session.send("Alice, Ra")
+        session.send(raw_msg)
         response = session.recv()
         print(response)
         session.close()
