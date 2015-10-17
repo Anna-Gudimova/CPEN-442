@@ -73,7 +73,6 @@ class SessionManager:
         # else:
         #     raise Exception("Session not securely initialized")
         e_msg = encrypt(keystream, msg, iv)
-        print("type of encrypt: "+str(type(e_msg)))
         self._messenger.send(e_msg)
 
     def recv(self):
@@ -119,13 +118,14 @@ if __name__ == "__main__":
 
     # todo: get from GUI
     host_ip = '127.0.0.1'
-    port = 12345
+    port = 12335
     raw_msg = "Alice, Ra"
 
     if args.mode == MODE_CLIENT:
         session = SessionManager(port, host_ip)
         session.send(raw_msg)
         response = session.recv()
+        print(response)
         session.close()
     elif args.mode == MODE_SERVER:
         session = SessionManager(port)

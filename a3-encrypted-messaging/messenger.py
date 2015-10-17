@@ -14,6 +14,7 @@ class Messenger:
     def __init__(self, socket):
         self._s = socket
         self._raw_received = b''
+        self.log = logging.getLogger(__name__)
 
     def send(self, msg):
         if len(msg) % self.BUFFER_SIZE:
@@ -31,7 +32,7 @@ class Messenger:
             if sent == 0:
                 raise RuntimeError("socket send connection issue")
             sent_len += sent  # how much of the message we have sent
-        self.log.info("sent " + raw_msg.decode(self.ENCODING))
+        self.log.info("sent " + str(msg))
 
     def recv(self):
         # read in any data to self._raw_received (non blocking)
