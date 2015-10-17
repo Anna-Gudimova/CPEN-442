@@ -12,6 +12,11 @@ MODE_CLIENT = 'c'
 MODE_SERVER = 's'
 
 MESSAGE_ENCODING = 'utf-8'
+## TODO: Figure out ideal place for following lines (coming from GUI)
+## IV generated for each new msg..decrypt requires same IV
+key = "something Ildar will write"
+keystream = generate_keystream(key)
+iv = generate_init_vector()
 
 # this class holds the state of the program
 class SessionManager:
@@ -62,10 +67,14 @@ class SessionManager:
         #     self._messenger.send(msg)
         # else:
         #     raise Exception("Session not securely initialized")
-        self._messenger.send(msg)
+        e_msg = encrypt(keystream, msg, iv)
+        print("type of encrypt: "+str(type(e_msg)))
+        self._messenger.send(e_msg)
 
     def recv(self):
-        return self._messenger.recv()
+        e_data = self._messenger.recv()
+        raw_data = decrypt(keystream, e_data, iv)
+        return raw_data
 
     def is_secure(self):
         return False
@@ -95,8 +104,10 @@ if __name__ == "__main__":
         while session is not None:  # the gui should be spamming this
             try:
                 msg_in = session.recv()
-                if msg_in is not None:
+                if len(msg_in) > 0:
+                    print(msg_in)
                     session.send('hello {}'.format(msg_in))
+                    msg_in = ""
             except Exception as e:
                 print("exception: {}".format(e))
                 session.reset_messenger()

@@ -6,18 +6,23 @@ import base64
 Key_Master = urandom(16)
 
 def generate_init_vector():
-    iv = urandom(16)
+    iv = b'asdfaskjhgkjhgdf'# urandom(16)
+    print("iv type: "+str(type(iv)))
     return iv
 
 def encrypt(key, msg, iv):
     padded_msg = pad_message(msg)
+    print("padded_msg len: "+str(len(padded_msg)))
     encrypter = AES.new(key, AES.MODE_CBC, iv)
-    # base64 to convert bytes to string. Messenger.send expects string
-    cipher_text = base64.b64encode(iv + encrypter.encrypt(padded_msg))
+    cipher_text = encrypter.encrypt(padded_msg)
+    print("encrypt bytes: "+str(len(cipher_text)))
+    print("sending ", cipher_text)
     return cipher_text
 
 def decrypt(key, cipher, iv):
-    print("decrypt: "+str(len(cipher)))
+    # covert string tp bytes for AES
+    if len(cipher) > 0:
+        print("decrypt bytes: "+str(len(cipher)))
     decrypter = AES.new(key, AES.MODE_CBC, iv)
     plain_text = decrypter.decrypt(cipher)
     return plain_text
@@ -45,14 +50,12 @@ def quick_test():
 
     plain = "Hello I am Alice!"
     print("Plain text: "+plain)
-    padded_msg = pad_message(plain)
 
-    cipher = encrypt(keystream, padded_msg, IV)
-    print("Cipher text: "+str(cipher))
+    cipher = encrypt(keystream, plain, IV)
+    #print("Cipher text: "+cipher.decode('utf-8'))
 
     decipher = decrypt(keystream, cipher, IV)
-    print("Decrypted: "+str(decipher))
+    print("Decrypted: %s"%(decipher))
 
-
-
-
+if __name__ == "__main__":
+    quick_test()
