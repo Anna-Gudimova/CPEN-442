@@ -4,7 +4,7 @@ __author__ = 'andrew'
 
 import argparse
 import logging
-from crypto import encrypt, decrypt, generate_keystream, generate_init_vector, generateAorB
+from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB
 from messenger import Messenger
 import socket
 import sys
@@ -16,20 +16,27 @@ MESSAGE_ENCODING = 'utf-8'
 
 ## TODO: Figure out ideal place for following lines (coming from GUI)
 ## IV generated for each new msg..decrypt requires same IV
-key = "something Ildar will write"
-keystream = generate_keystream(key)
-iv = generate_init_vector()
 
 class SessionManager:
-    def __init__(self, port, ip_address=None):
+    def __init__(self, master_key, port, ip_address=None):
         # can be either a server or client. if ip_address=None, be a server on port. Otherwise, try to connect to
         # ip_address:port
+
+        # networking config
         self.port = port
         self.ip_address = ip_address
-        self.log = logging.getLogger(__name__)
 
+        # security config
+        # if the master key is too short, make it longer
+        self.master_key = generate_keystream(master_key)
+
+        # initialized when communication is established
         self._messenger = None
+        self.master_encrypter = None
+
+        self.log = logging.getLogger(__name__)
         self.reset_messenger()
+
 
     def reset_messenger(self):
         if self._messenger is not None:
@@ -50,6 +57,8 @@ class SessionManager:
 
             self.log.info("Accepted connection from {}".format(addr))
 
+            iv = generate_init_vector() # the server should generate a random iv
+            self.master_encrypter = Encrypter(self.master_key, iv)
             # todo: authenticate client, start communication loop with authenticated client
             # messenger = self.authenticate_as_server(client)
 
@@ -63,21 +72,20 @@ class SessionManager:
             # todo: authenticate server, start communication loop with authenticated server
             # messenger = self.authenticate_as_client(server)
 
+            # TODO read the iv during first message passing
+            iv = generate_init_vector() # the server should send a randomly generated iv
+            self.master_encrypter = Encrypter(self.master_key, iv)
+
             m = Messenger(s)
             self._messenger = m
 
     def send(self, msg):
-        # if self.is_secure():
-        #     encrypt(msg)
-        #     self._messenger.send(msg)
-        # else:
-        #     raise Exception("Session not securely initialized")
-        e_msg = encrypt(keystream, msg, iv)
+        e_msg = self.master_encrypter.encrypt(msg)
         self._messenger.send(e_msg)
 
     def recv(self):
         e_data = self._messenger.recv()
-        raw_data = decrypt(keystream, e_data, iv)
+        raw_data = self.master_encrypter.decrypt(e_data)
         return raw_data
 
     def is_secure(self):
@@ -116,9 +124,11 @@ if __name__ == "__main__":
     init_logger(args.log_file)
     log = logging.getLogger(__name__)
 
-    # todo: get from GUI
+    # todo: get these from GUI
     host_ip = '127.0.0.1'
     port = 12335
+    master_key = "is ildar illuminati?"
+
     raw_msg = "Alice, Ra"
     p=0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF
     g=2
@@ -127,7 +137,7 @@ if __name__ == "__main__":
         # generate_keystream(key)
         # secretA=generateAorB()
         # publicA=g**secretA % p
-        session = SessionManager(port, host_ip)
+        session = SessionManager(master_key, port, host_ip)
         # IV = generate_init_vector()
         # encryptedSecretA = encrypt(keystream, str(publicA), IV)
         # session.send(encryptedSecretA)
@@ -144,7 +154,7 @@ if __name__ == "__main__":
         # publicB=g**secretB % p
         # IV = generate_init_vector()
         # encryptedSecretB = encrypt(keystream, str(publicB), IV)
-        session = SessionManager(port)
+        session = SessionManager(master_key, port)
         while session is not None:  # the gui should be spamming this
             try:
                 msg_in = session.recv()

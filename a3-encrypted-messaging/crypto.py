@@ -2,37 +2,43 @@ from Crypto.Cipher import AES
 from os import urandom
 import random
 import hashlib
-import base64
+from logging import getLogger
 
-Key_Master = urandom(16)
-
-def generate_init_vector():
-    iv = b'asdfaskjhgkjhgdf'# urandom(16)
-    print("iv type: "+str(type(iv)))
-    return iv
-
-def encrypt(key, msg, iv):
-    padded_msg = pad_message(msg)
-    print("padded_msg len: "+str(len(padded_msg)))
-    encrypter = AES.new(key, AES.MODE_CBC, iv)
-    cipher_text = encrypter.encrypt(padded_msg)
-    print("encrypt bytes: "+str(len(cipher_text)))
-    print("sending ", cipher_text)
-    return cipher_text
-
-def decrypt(key, cipher, iv):
-    # covert string tp bytes for AES
-    if len(cipher) > 0:
-        print("decrypt bytes: "+str(len(cipher)))
-    decrypter = AES.new(key, AES.MODE_CBC, iv)
-    plain_text = decrypter.decrypt(cipher)
-    return plain_text
 
 def pad_message(msg):
     pad_len = 16-len(msg)%16
-    print("strlen: "+str(len(msg)))
     pad_msg = msg.zfill(pad_len+len(msg))
     return pad_msg
+
+
+def generate_init_vector():
+    # TODO Replace with urandom
+    iv = b'asdfaskjhgkjhgdf'  # urandom(16)
+    return iv
+
+
+class Encrypter:
+    def __init__(self, key, iv):
+        self._AES = AES.new(key, AES.MODE_CBC, iv)
+
+        # init the logger with a name based on the key
+        self.log = getLogger(__name__ + "." + str(key)[:5])
+
+    def encrypt(self, msg):
+        padded_msg = pad_message(msg)
+        cipher_msg = self._AES.encrypt(padded_msg)
+        self.log.debug("encrypted {} chars: {} to {}".format(len(padded_msg), str(padded_msg), str(cipher_msg)))
+        return cipher_msg
+
+    def decrypt(self, cipher_msg):
+        # covert string tp bytes for AES
+        if len(cipher_msg) > 0:
+            plain_text = self._AES.decrypt(cipher_msg)
+            self.log.debug("decrypted {} chars: {} to {}".format(len(cipher_msg), str(cipher_msg), str(plain_text)))
+        else:
+            plain_text = b''
+        return plain_text
+
 
 def generate_keystream(key):
     ## if key<16 bytes, generate keystream using sha256
