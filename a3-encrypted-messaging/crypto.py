@@ -1,5 +1,6 @@
 from Crypto.Cipher import AES
 from os import urandom
+import random
 import hashlib
 import base64
 
@@ -39,6 +40,9 @@ def generate_keystream(key):
     s.update(key.encode('utf-8'))
     keystream = s.digest()
     return keystream
+	
+def generateAorB():
+	return random.randint(2048,4096)
 
 def quick_test():
 
