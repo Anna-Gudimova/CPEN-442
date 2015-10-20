@@ -4,18 +4,14 @@ __author__ = 'andrew'
 
 import argparse
 import logging
-from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB
+from crypto import Encrypter, generate_keystream, generate_init_vector
 from messenger import Messenger
 import socket
 import sys
-from threading import Thread
 
 MODE_CLIENT = 'c'
 MODE_SERVER = 's'
-MESSAGE_ENCODING = 'utf-8'
 
-## TODO: Figure out ideal place for following lines (coming from GUI)
-## IV generated for each new msg..decrypt requires same IV
 
 class SessionManager:
     def __init__(self, master_key, port, ip_address=None):
@@ -27,12 +23,10 @@ class SessionManager:
         self.ip_address = ip_address
 
         # security config
-        # if the master key is too short, make it longer
-        self.master_key = generate_keystream(master_key)
+        self.master_key = generate_keystream(master_key)  # if the master key is too short, make it longer
 
-        # initialized when communication is established
+        # initialized when communication is established in reset_messenger()
         self._messenger = None
-        self.master_encrypter = None
 
         self.log = logging.getLogger(__name__)
         self.reset_messenger()
@@ -58,38 +52,40 @@ class SessionManager:
             self.log.info("Accepted connection from {}".format(addr))
 
             iv = generate_init_vector() # the server should generate a random iv
-            self.master_encrypter = Encrypter(self.master_key, iv)
-            # todo: authenticate client, start communication loop with authenticated client
+            master_encrypter = Encrypter(self.master_key, iv)
+
+            # todo: authenticate client,
+            # todo: init session_encrypter
+            # todo: start communication loop with authenticated client
             # messenger = self.authenticate_as_server(client)
 
-            self._messenger = Messenger(session_socket)
+            self._messenger = Messenger(session_socket, master_encrypter)
             s.close()
         else:
             # client init: specify ip address and port to try to ping
             self.log.info("Trying to connect to {}:{}".format(self.ip_address, self.port))
             s.connect((self.ip_address, self.port))
 
-            # todo: authenticate server, start communication loop with authenticated server
-            # messenger = self.authenticate_as_client(server)
-
             # TODO read the iv during first message passing
             iv = generate_init_vector() # the server should send a randomly generated iv
-            self.master_encrypter = Encrypter(self.master_key, iv)
+            master_encrypter = Encrypter(self.master_key, iv)
 
-            m = Messenger(s)
+            # todo: authenticate server
+            # todo: init session_encrypter
+            # todo: start communication loop with authenticated server
+            # messenger = self.authenticate_as_client(server)
+
+            m = Messenger(s, master_encrypter)
             self._messenger = m
 
     def send(self, msg):
-        e_msg = self.master_encrypter.encrypt(msg)
-        self._messenger.send(e_msg)
+        self._messenger.send(msg)
 
     def recv(self):
-        e_data = self._messenger.recv()
-        raw_data = self.master_encrypter.decrypt(e_data)
-        return raw_data
-
-    def is_secure(self):
-        return False
+        data_in = self._messenger.recv()
+        if len(data_in) > 0:
+            print(data_in)
+        return data_in
 
     def close(self):
         self._messenger.close()
@@ -126,10 +122,10 @@ if __name__ == "__main__":
 
     # todo: get these from GUI
     host_ip = '127.0.0.1'
-    port = 12335
+    port = 19212
     master_key = "is ildar illuminati?"
 
-    raw_msg = "Alice, Ra"
+    raw_msg = "Alissse, Ra"
     p=0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF
     g=2
 
@@ -143,7 +139,10 @@ if __name__ == "__main__":
         # session.send(encryptedSecretA)
         session.send(raw_msg)
         response = session.recv()
-        print(response)
+        while not response:
+            response = session.recv()
+
+        log.info('response: ' + response)
         # publicB=decrypt(keystream, response, IV)
         # print('g^b mod p is ', publicB,'\n')
         # sessionKey=int(publicB)**secretA        
