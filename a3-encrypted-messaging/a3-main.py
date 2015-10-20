@@ -141,8 +141,6 @@ if __name__ == "__main__":
         response = session.recv()
         while not response:
             response = session.recv()
-
-        log.info('response: ' + response)
         # publicB=decrypt(keystream, response, IV)
         # print('g^b mod p is ', publicB,'\n')
         # sessionKey=int(publicB)**secretA        
