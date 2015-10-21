@@ -83,11 +83,12 @@ class Messenger:
 
                 self._msg_out = [msg_start.decode(STRING_ENCODING)]
                 self._blocks_remaining = num_blocks - blocks_available
+                self._raw_received = self._raw_received[BLOCK_SIZE * blocks_available:]
             elif self._blocks_remaining > 0:  # body of a message
                 bmsg = self._encrypter.decrypt(self._raw_received[:BLOCK_SIZE])
                 self._msg_out.append(bmsg.decode(STRING_ENCODING))
                 self._blocks_remaining -= 1
-            self._raw_received = self._raw_received[BLOCK_SIZE:]
+                self._raw_received = self._raw_received[BLOCK_SIZE:]
 
         if self._blocks_remaining == 0:
             next_msg = ''.join(self._msg_out)
