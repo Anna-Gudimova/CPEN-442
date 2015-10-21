@@ -47,20 +47,7 @@ class Encrypter:
 def generateAorB():
 	# return random.randint(2048,4096)
     #return random.randint(16,32)
-	return random.getrandbits(8)
-	
-def gToPower(pow,g):
-    if pow<0:
-        pow=-1*pow
-        return gToPower(pow,1/g)
-    elif pow==0:
-        return 1
-    elif pow==1:
-        return g
-    elif pow%2==0:
-        return gToPower(pow/2,g*g)
-    else:
-        return g*gToPower((pow-1)/2,g*g)
+	return random.getrandbits(256)
 
 def genStr(size=15, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for i in range(size))
