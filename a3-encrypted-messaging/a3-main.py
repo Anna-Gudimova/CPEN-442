@@ -4,32 +4,35 @@ __author__ = 'andrew'
 
 import argparse
 import logging
-from crypto import encrypt, decrypt, generate_keystream, generate_init_vector, generateAorB
+from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr
 from messenger import Messenger
+from time import sleep
 import socket
+import random
 import sys
-from threading import Thread
 
 MODE_CLIENT = 'c'
 MODE_SERVER = 's'
-MESSAGE_ENCODING = 'utf-8'
 
-## TODO: Figure out ideal place for following lines (coming from GUI)
-## IV generated for each new msg..decrypt requires same IV
-key = "something Ildar will write"
-keystream = generate_keystream(key)
-iv = generate_init_vector()
 
 class SessionManager:
-    def __init__(self, port, ip_address=None):
+    def __init__(self, master_key, port, ip_address=None):
         # can be either a server or client. if ip_address=None, be a server on port. Otherwise, try to connect to
         # ip_address:port
+
+        # networking config
         self.port = port
         self.ip_address = ip_address
-        self.log = logging.getLogger(__name__)
 
+        # security config
+        self.master_key = generate_keystream(master_key)  # if the master key is too short, make it longer
+
+        # initialized when communication is established in reset_messenger()
         self._messenger = None
+
+        self.log = logging.getLogger(__name__)
         self.reset_messenger()
+
 
     def reset_messenger(self):
         if self._messenger is not None:
@@ -50,38 +53,41 @@ class SessionManager:
 
             self.log.info("Accepted connection from {}".format(addr))
 
-            # todo: authenticate client, start communication loop with authenticated client
+            iv = generate_init_vector() # the server should generate a random iv
+            master_encrypter = Encrypter(self.master_key, iv)
+
+            # todo: authenticate client,
+            # todo: init session_encrypter
+            # todo: start communication loop with authenticated client
             # messenger = self.authenticate_as_server(client)
 
-            self._messenger = Messenger(session_socket)
+            self._messenger = Messenger(session_socket, master_encrypter)
             s.close()
         else:
             # client init: specify ip address and port to try to ping
             self.log.info("Trying to connect to {}:{}".format(self.ip_address, self.port))
             s.connect((self.ip_address, self.port))
 
-            # todo: authenticate server, start communication loop with authenticated server
+            # TODO read the iv during first message passing
+            iv = generate_init_vector() # the server should send a randomly generated iv
+            master_encrypter = Encrypter(self.master_key, iv)
+
+            # todo: authenticate server
+            # todo: init session_encrypter
+            # todo: start communication loop with authenticated server
             # messenger = self.authenticate_as_client(server)
 
-            m = Messenger(s)
+            m = Messenger(s, master_encrypter)
             self._messenger = m
 
     def send(self, msg):
-        # if self.is_secure():
-        #     encrypt(msg)
-        #     self._messenger.send(msg)
-        # else:
-        #     raise Exception("Session not securely initialized")
-        e_msg = encrypt(keystream, msg, iv)
-        self._messenger.send(e_msg)
+        self._messenger.send(msg)
 
     def recv(self):
-        e_data = self._messenger.recv()
-        raw_data = decrypt(keystream, e_data, iv)
-        return raw_data
-
-    def is_secure(self):
-        return False
+        data_in = self._messenger.recv()
+        if len(data_in) > 0:
+            print(data_in)
+        return data_in
 
     def close(self):
         self._messenger.close()
@@ -116,49 +122,72 @@ if __name__ == "__main__":
     init_logger(args.log_file)
     log = logging.getLogger(__name__)
 
-    # todo: get from GUI
+    # todo: get these from GUI
     host_ip = '127.0.0.1'
-    port = 12335
-    raw_msg = "Alice, Ra"
-    p=0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF
-    g=2
+    port = 16200
+    master_key = "is ildar illuminati?"
+
+    raw_msg = "Alissse, Ra"
+
+    p = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF
+    g = 2
+    challengeLength = 10
 
     if args.mode == MODE_CLIENT:
-        # generate_keystream(key)
-        # secretA=generateAorB()
-        # publicA=g**secretA % p
-        session = SessionManager(port, host_ip)
-        # IV = generate_init_vector()
-        # encryptedSecretA = encrypt(keystream, str(publicA), IV)
-        # session.send(encryptedSecretA)
-        session.send(raw_msg)
+        clientChallenge=genStr(challengeLength)
+        print('STRING ONE ', clientChallenge,'\n')
+        secretA=generateAorB()
+        publicA= pow(g, secretA, p)
+        print('PUBLIC A ', publicA,'\n')
+        session = SessionManager(master_key, port, host_ip)
+        session.send(clientChallenge+str(publicA))
         response = session.recv()
-        print(response)
-        # publicB=decrypt(keystream, response, IV)
-        # print('g^b mod p is ', publicB,'\n')
-        # sessionKey=int(publicB)**secretA        
-        # print('Session key generated by the client is ',str(sessionKey),'\n')
+        while not response:
+            response = session.recv()
+        if response[:challengeLength]!=clientChallenge:
+            print('RESPONSE IS ',response[:challengeLength],' \n')
+            print('Server error: enter the correct master key! Session will be terminated!\n')
+            session.close() 
+        else:
+            print('Client Authentication Successful!!!\n')
+            serverChallengeHash=str(generate_keystream(response[challengeLength:2*challengeLength]))
+            session.send(serverChallengeHash)
+            print('g^b mod p is ', response[2*challengeLength:],'\n')
+            sessionKey = pow(int(response[2*challengeLength:]), secretA, p)
+            print('Session key generated by the client is ',str(sessionKey),'\n')	
         session.close()
     elif args.mode == MODE_SERVER:
-        # secretB=generateAorB()
-        # publicB=g**secretB % p
-        # IV = generate_init_vector()
-        # encryptedSecretB = encrypt(keystream, str(publicB), IV)
-        session = SessionManager(port)
+        flag = 0
+        secretB = generateAorB()
+        publicB = pow(g, secretB, p)
+        serverChallenge=genStr(challengeLength)
+        serverChallengeHash=str(generate_keystream(serverChallenge))
+        print('PUBLIC B is ',publicB,'\n')
+        session = SessionManager(master_key, port)
         while session is not None:  # the gui should be spamming this
             try:
                 msg_in = session.recv()
                 if len(msg_in) > 0:
-                    # publicA = decrypt(keystream, msg_in,IV)
-                    # sessionKey=int(publicA)**secretB
-                    # print('g^a mod p is ',publicA,'\n')
-                    # print('Session Key generated by the server is ',str(sessionKey),'\n')
-                    print(msg_in)
-                    # session.send(str(encryptedSecretB).format(msg_in))
-                    session.send('hello {}'.format(msg_in))
-                    msg_in = ""
+                    if flag==1:
+                        if msg_in!=serverChallengeHash:
+                            print('Client error: enter the correct master key! Session will be terminated!\n')
+                            session.close()
+                        else: 
+                            print('Server Authentication Successful!!!\n')
+                        flag=0
+                    else:
+                        print('MSG_IN IS ',msg_in,'\n')
+                        clientChallenge=msg_in[:challengeLength]
+                        print('Client Challenge is ',clientChallenge,'\n')
+                        publicA=msg_in[challengeLength:]
+                        print('publicA is ', publicA, '\n')
+                        session.send(clientChallenge+serverChallenge+str(publicB).format(msg_in))
+                        flag=1
+                        sessionKey = pow(int(publicA), secretB, p)
+                        print('Session Key generated by the server is ',str(sessionKey),'\n')
+                        msg_in = ""
             except Exception as e:
-                log.exception("Session closed: {}".format(e))
+                log.warning("Session closed: {}".format(e))
                 session.reset_messenger()
     else:
         raise Exception("We should never get here! Unexpected cli mode arg %s".format(args.mode))

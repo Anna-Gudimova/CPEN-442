@@ -1,49 +1,57 @@
 from Crypto.Cipher import AES
 from os import urandom
 import random
+import string
 import hashlib
-import base64
+from logging import getLogger
 
-Key_Master = urandom(16)
-
-def generate_init_vector():
-    iv = b'asdfaskjhgkjhgdf'# urandom(16)
-    print("iv type: "+str(type(iv)))
-    return iv
-
-def encrypt(key, msg, iv):
-    padded_msg = pad_message(msg)
-    print("padded_msg len: "+str(len(padded_msg)))
-    encrypter = AES.new(key, AES.MODE_CBC, iv)
-    cipher_text = encrypter.encrypt(padded_msg)
-    print("encrypt bytes: "+str(len(cipher_text)))
-    print("sending ", cipher_text)
-    return cipher_text
-
-def decrypt(key, cipher, iv):
-    # covert string tp bytes for AES
-    if len(cipher) > 0:
-        print("decrypt bytes: "+str(len(cipher)))
-    decrypter = AES.new(key, AES.MODE_CBC, iv)
-    plain_text = decrypter.decrypt(cipher)
-    return plain_text
-
-def pad_message(msg):
-    pad_len = 16-len(msg)%16
-    print("strlen: "+str(len(msg)))
-    pad_msg = msg.zfill(pad_len+len(msg))
-    return pad_msg
+BLOCK_SIZE = 16
 
 def generate_keystream(key):
-    ## if key<16 bytes, generate keystream using sha256
+    # improve key security by generating keystream using sha256. Good if key is short
     s = hashlib.sha256()
     s.update(key.encode('utf-8'))
     keystream = s.digest()
     return keystream
-	
-def generateAorB():
-	return random.randint(2048,4096)
 
+def generate_init_vector():
+    # TODO Replace with urandom
+    iv = b'asdfaskjhgkjhgdf'  # urandom(16)
+    return iv
+
+class Encrypter:
+    def __init__(self, key, iv):
+        self._AES = AES.new(key, AES.MODE_CBC, iv)
+
+        # init the logger with a name based on the key
+        # self.log = getLogger(__name__ + "." + str(key)[:5])
+
+    def encrypt(self, bmsg):
+        # encrypts plain text string to cipher bytes
+        if len(bmsg) % BLOCK_SIZE:
+            raise Exception("msg length must be a multiple of {}: {}".format(BLOCK_SIZE, bmsg))
+
+        cipher_bmsg = self._AES.encrypt(bmsg)
+        # self.log.debug("encrypted {} chars: {} to {}".format(len(bmsg), str(bmsg), str(cipher_bmsg)))
+        return cipher_bmsg
+
+    def decrypt(self, cipher_bmsg):
+        # decrypts cipher bytes to plain text string
+        if len(cipher_bmsg) > 0:
+            bmsg = self._AES.decrypt(cipher_bmsg)
+            # self.log.debug("decrypted {} chars: {} to {}".format(len(cipher_bmsg), str(cipher_bmsg), bmsg))
+        else:
+            bmsg = b''
+        return bmsg
+
+def generateAorB():
+	# return random.randint(2048,4096)
+    #return random.randint(16,32)
+	return random.getrandbits(256)
+
+def genStr(size=15, chars=string.ascii_letters + string.digits):
+    return ''.join(random.choice(chars) for i in range(size))
+	
 def quick_test():
 
     IV = generate_init_vector()
@@ -52,14 +60,18 @@ def quick_test():
     key = "test**965"
     keystream = generate_keystream(key)
 
+    encrypter = Encrypter(keystream, IV)
+
     plain = "Hello I am Alice!"
     print("Plain text: "+plain)
 
-    cipher = encrypt(keystream, plain, IV)
+    cipher = encrypter.encrypt(plain)
     #print("Cipher text: "+cipher.decode('utf-8'))
 
-    decipher = decrypt(keystream, cipher, IV)
+    decipher = encrypter.decrypt(cipher)
     print("Decrypted: %s"%(decipher))
 
 if __name__ == "__main__":
-    quick_test()
+    # quick_test()
+    g=gToPower(generateAorB(),2)
+    print('gToPower output is ',g,' \n')
