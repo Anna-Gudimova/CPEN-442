@@ -46,13 +46,13 @@ class Encrypter:
 
 def generateAorB():
 	# return random.randint(2048,4096)
-    return random.randint(16,32)
-	# return random.getrandbits(256)
+    #return random.randint(16,32)
+	return random.getrandbits(8)
 	
 def gToPower(pow,g):
     if pow<0:
         pow=-1*pow
-        return gToPower(pow,g)
+        return gToPower(pow,1/g)
     elif pow==0:
         return 1
     elif pow==1:
@@ -85,4 +85,6 @@ def quick_test():
     print("Decrypted: %s"%(decipher))
 
 if __name__ == "__main__":
-    quick_test()
+    # quick_test()
+    g=gToPower(generateAorB(),2)
+    print('gToPower output is ',g,' \n')
