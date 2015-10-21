@@ -9,10 +9,12 @@ from tkinter import messagebox
 import logging
 from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr
 from messenger import Messenger
+from sessionmanager import *
+
 import socket
+
 import sys
 from threading import Thread
-from sessionmanager import *
 import traceback
 import queue
 from threading import Timer
@@ -22,7 +24,7 @@ from threading import Timer
 class Gui:
     LOG_FILE_NAME = "log.txt"
 
-    PROGRAM_NAME = "Best Assignment 3 lol kiddingnotkidding. Hi Illdar :)"
+    PROGRAM_NAME = "Hi Ildar =). Happy Hacking!"
     
     #Initial Screen 
     CHOICE_LBL = "Choose the option you would like to run the code under: "
@@ -39,7 +41,7 @@ class Gui:
     IP_LBL = "IP"
     IP_PLACEHOLDER_TXT = '127.0.0.1'
     PORT_LBL = "Port"
-    PORT_PLACEHOLDER_TXT = "80"
+    PORT_PLACEHOLDER_TXT = "8990"
     MASTERKEY_LBL = "Master Key"
     MASTERKEY_PLACEHOLDER_TXT = "Make one up, lazy"
     OK_BTN = "OK"
@@ -108,8 +110,6 @@ class Gui:
 
         return [self.root, mainframe]
 
-    def hideAllCurrentWidgets(self):
-        pass
 
     """
     Add necessary elements for the first UI. Allows the user
@@ -164,7 +164,11 @@ class Gui:
         self.port = StringVar()
         self.masterKey = StringVar()
 
-        a = ttk.Label(parentFrame, text=self.CLT_CONFIG_LBL)
+        if isServer: 
+            a = ttk.Label(parentFrame, text=self.SVR_CONFIG_LBL)
+        else:
+            a = ttk.Label(parentFrame, text=self.CLT_CONFIG_LBL)
+
         a.grid(column=2, row=1, sticky=W)
         self.widgets.append(a)
 
@@ -175,6 +179,7 @@ class Gui:
         if(not isServer):
             ipEntry = ttk.Entry(parentFrame, width=7, textvariable=self.ip)
             ipEntry.grid(column=3, row=3, sticky=W)
+            ipEntry.insert(0, self.IP_PLACEHOLDER_TXT)
             self.widgets.append(ipEntry)
 
         c = ttk.Label(parentFrame, text=self.PORT_LBL)
@@ -182,6 +187,7 @@ class Gui:
         self.widgets.append(c)
         portEntry = ttk.Entry(parentFrame, width=7, textvariable=self.port)
         portEntry.grid(column=3, row=5, sticky=W)
+        portEntry.insert(0, self.PORT_PLACEHOLDER_TXT)
         self.widgets.append(portEntry)
 
         d = ttk.Label(parentFrame, text=self.MASTERKEY_LBL)
@@ -190,6 +196,7 @@ class Gui:
 
         masterKeyEntry = ttk.Entry(parentFrame, width=7, textvariable=self.masterKey)
         masterKeyEntry.grid(column=3, row=7, sticky=W)
+        masterKeyEntry.insert(0, self.MASTERKEY_PLACEHOLDER_TXT)
         self.widgets.append(masterKeyEntry)
 
         e = ttk.Button(parentFrame, text=self.OK_BTN, command= lambda: self.initMessagingGui(parentFrame))
