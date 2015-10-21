@@ -47,6 +47,7 @@ class Gui:
     SENT_MESSAGE_DEFAULT = "You have not received any messages yet."
     MSG_INSPECTOR_DEFAULT = "You may expand a messages content here."
     SEND_BTN_TXT = "Send"
+    CONTINUE_BTN_TXT = "Continue"
     POLL_DELAY_MS = 150
 
 
@@ -236,6 +237,8 @@ class Gui:
         self.sendBtn = ttk.Button(parentFrame, text=self.SEND_BTN_TXT, command=self.sendMessage)
         self.sendBtn.grid(column=7, row=1, padx=10, pady=10)
 
+        #self.continueBtn = ttk.Button(parentFrame, text=self.CONTINUE_BTN_TXT, command=self.sendMessage)
+        #self.continueBtn.grid(column=7, row=1, padx=10, pady=10)
 
     """
     Polls the receivedMessageQueue to add messages to the chat window.
