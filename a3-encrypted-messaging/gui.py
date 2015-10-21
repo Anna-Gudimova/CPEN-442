@@ -302,8 +302,8 @@ class Gui:
     """
 
     """
-    def pause(self):
-        messagebox.showinfo("Continue?", "Press OK when you're ready to continue.")
+    def pause(self, msg):
+        messagebox.showinfo("Ready to send?", "Press OK when you're ready to continue.\n\nMSG: " + str(msg))
 
     """
     Remove all current widgets in the GUI in order to update the contents of the screen.

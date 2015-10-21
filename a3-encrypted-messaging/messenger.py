@@ -47,10 +47,12 @@ class Messenger:
         self._msg_out = []
 
     def send(self, msg):
-        self.continueHandler()
         bmsg = msg.encode(STRING_ENCODING)
         bmsg = add_header(bmsg)
         bmsg = self._encrypter.encrypt(bmsg)
+
+        # Before sending the message, wait for user input to continue
+        self.continueHandler(bmsg)
 
         total_len = len(bmsg)
         sent_len = 0

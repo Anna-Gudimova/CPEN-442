@@ -25,32 +25,7 @@ p = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B
 g = 2
 
 ## IV generated for each new msg..decrypt requires same IV
-iv = generate_init_vector()
 
-def generate_and_send_iv(session_socket):
-    iv = generate_init_vector() # the server should generate a random iv
-
-    # send iv over socket first!
-    sent_len = 0
-    while sent_len < len(iv):
-        sent = session_socket.send(iv[sent_len:])
-        if sent == 0:
-            raise RuntimeError("socket send connection issue")
-        sent_len += sent  # how much of the message we have sent
-    logging.getLogger(__name__).info("sent iv: " + str(iv))
-    return iv
-
-def receive_iv(session_socket):
-    bytes_in = 0
-    iv = b''
-    while len(iv) < IV_LENGTH:
-        chunk = session_socket.recv(IV_LENGTH - len(iv))
-        if chunk == b'':
-            session_socket.close()
-            raise RuntimeError("socket closed")
-        iv += chunk
-    logging.getLogger(__name__).info('received iv: {}'.format(str(iv)))
-    return iv
 
 class SessionManager:
     def __init__(self, port, ip_address, key, continueHandler):
@@ -60,18 +35,43 @@ class SessionManager:
         self.port = port
         self.ip_address = ip_address
         self.master_key = generate_keystream(key)  # if the master key is too short, make it longer
-
+        self.iv = generate_init_vector()
         self.log = logging.getLogger(__name__)
         self.continueHandler = continueHandler
 
         self._messenger = None
         self.reset_messenger()
 
+    def generate_and_send_iv(self, session_socket):
+        iv = generate_init_vector() # the server should generate a random iv
+
+        self.continueHandler(iv)
+        # send iv over socket first!
+        sent_len = 0
+        while sent_len < len(iv):
+            sent = session_socket.send(iv[sent_len:])
+            if sent == 0:
+                raise RuntimeError("socket send connection issue")
+            sent_len += sent  # how much of the message we have sent
+        logging.getLogger(__name__).info("sent iv: " + str(iv))
+        return iv
+
+    def receive_iv(self, session_socket):
+        bytes_in = 0
+        iv = b''
+        while len(iv) < IV_LENGTH:
+            chunk = session_socket.recv(IV_LENGTH - len(iv))
+            if chunk == b'':
+                session_socket.close()
+                raise RuntimeError("socket closed")
+            iv += chunk
+        logging.getLogger(__name__).info('received iv: {}'.format(str(iv)))
+        return iv
 
     def authenticate_as_server(self, session_socket):
         # authenticates an external client connected via session_socket
 
-        iv = generate_and_send_iv(session_socket) # the server should generate a random iv
+        iv = self.generate_and_send_iv(session_socket) # the server should generate a random iv
 
         master_encrypter = Encrypter(self.master_key, iv)
         m_messenger = Messenger(session_socket, master_encrypter, self.continueHandler)
@@ -108,7 +108,7 @@ class SessionManager:
     def authenticate_as_client(self, session_socket):
         # authenticates an external server connected via session_socket
 
-        iv = receive_iv(session_socket)
+        iv = self.receive_iv(session_socket)
         master_encrypter = Encrypter(self.master_key, iv)
         m = Messenger(session_socket, master_encrypter, self.continueHandler)
 
