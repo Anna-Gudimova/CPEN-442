@@ -6,6 +6,7 @@ import hashlib
 from logging import getLogger
 
 BLOCK_SIZE = 16
+IV_LENGTH = 16
 
 def generate_keystream(key):
     # improve key security by generating keystream using sha256. Good if key is short
@@ -16,7 +17,7 @@ def generate_keystream(key):
 
 def generate_init_vector():
     # TODO Replace with urandom
-    iv = b'asdfaskjhgkjhgdf'  # urandom(16)
+    iv = urandom(16)
     return iv
 
 class Encrypter:
@@ -45,9 +46,7 @@ class Encrypter:
         return bmsg
 
 def generateAorB():
-	# return random.randint(2048,4096)
-    #return random.randint(16,32)
-	return random.getrandbits(16)
+	return random.getrandbits(256)
 
 def genStr(size=15, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for i in range(size))
@@ -72,6 +71,4 @@ def quick_test():
     print("Decrypted: %s"%(decipher))
 
 if __name__ == "__main__":
-    # quick_test()
-    g=gToPower(generateAorB(),2)
-    print('gToPower output is ',g,' \n')
+    quick_test()

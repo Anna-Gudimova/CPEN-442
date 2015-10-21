@@ -4,7 +4,7 @@ __author__ = 'andrew'
 
 import argparse
 import logging
-from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr
+from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr, IV_LENGTH
 from messenger import Messenger
 import socket
 import sys
@@ -14,6 +14,31 @@ MODE_SERVER = 's'
 CHALLENGE_LENGTH = 16
 p = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF
 g = 2
+
+def generate_and_send_iv(session_socket):
+    iv = generate_init_vector() # the server should generate a random iv
+
+    # send iv over socket first!
+    sent_len = 0
+    while sent_len < len(iv):
+        sent = session_socket.send(iv[sent_len:])
+        if sent == 0:
+            raise RuntimeError("socket send connection issue")
+        sent_len += sent  # how much of the message we have sent
+    logging.getLogger(__name__).info("sent iv: " + str(iv))
+    return iv
+
+def receive_iv(session_socket):
+    bytes_in = 0
+    iv = b''
+    while len(iv) < IV_LENGTH:
+        chunk = session_socket.recv(IV_LENGTH - len(iv))
+        if chunk == b'':
+            session_socket.close()
+            raise RuntimeError("socket closed")
+        iv += chunk
+    logging.getLogger(__name__).info('received iv: {}'.format(str(iv)))
+    return iv
 
 class SessionManager:
     def __init__(self, master_key, port, ip_address=None):
@@ -35,7 +60,9 @@ class SessionManager:
 
     def authenticate_as_server(self, session_socket):
         # authenticates an external client connected via session_socket
-        iv = generate_init_vector() # the server should generate a random iv
+
+        iv = generate_and_send_iv(session_socket) # the server should generate a random iv
+
         master_encrypter = Encrypter(self.master_key, iv)
         m_messenger = Messenger(session_socket, master_encrypter)
 
@@ -71,10 +98,8 @@ class SessionManager:
     def authenticate_as_client(self, session_socket):
         # authenticates an external server connected via session_socket
 
-        # TODO read the iv during first message passing
-        iv = generate_init_vector() # the server should send a randomly generated iv
+        iv = receive_iv(session_socket)
         master_encrypter = Encrypter(self.master_key, iv)
-
         m = Messenger(session_socket, master_encrypter)
 
         clientChallenge = genStr(CHALLENGE_LENGTH)
@@ -172,7 +197,7 @@ if __name__ == "__main__":
 
     # todo: get these from GUI
     host_ip = '127.0.0.1'
-    port = 16100
+    port = 16105
     master_key = "is ildar illuminati?"
 
     if args.mode == MODE_CLIENT:
