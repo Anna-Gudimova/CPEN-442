@@ -1,6 +1,7 @@
 from Crypto.Cipher import AES
 from os import urandom
 import random
+import string
 import hashlib
 from logging import getLogger
 
@@ -44,8 +45,12 @@ class Encrypter:
         return bmsg
 
 def generateAorB():
-	return random.randint(2048,4096)
+	# return random.randint(2048,4096)
+    return random.randint(16,32)
 
+def genStr(size=15, chars=string.ascii_letters + string.digits):
+    return ''.join(random.choice(chars) for i in range(size))
+	
 def quick_test():
 
     IV = generate_init_vector()
