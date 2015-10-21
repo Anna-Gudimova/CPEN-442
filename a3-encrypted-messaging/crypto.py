@@ -24,7 +24,7 @@ class Encrypter:
         self._AES = AES.new(key, AES.MODE_CBC, iv)
 
         # init the logger with a name based on the key
-        self.log = getLogger(__name__ + "." + str(key)[:5])
+        # self.log = getLogger(__name__ + "." + str(key)[:5])
 
     def encrypt(self, bmsg):
         # encrypts plain text string to cipher bytes
@@ -32,14 +32,14 @@ class Encrypter:
             raise Exception("msg length must be a multiple of {}: {}".format(BLOCK_SIZE, bmsg))
 
         cipher_bmsg = self._AES.encrypt(bmsg)
-        self.log.debug("encrypted {} chars: {} to {}".format(len(bmsg), str(bmsg), str(cipher_bmsg)))
+        # self.log.debug("encrypted {} chars: {} to {}".format(len(bmsg), str(bmsg), str(cipher_bmsg)))
         return cipher_bmsg
 
     def decrypt(self, cipher_bmsg):
         # decrypts cipher bytes to plain text string
         if len(cipher_bmsg) > 0:
             bmsg = self._AES.decrypt(cipher_bmsg)
-            self.log.debug("decrypted {} chars: {} to {}".format(len(cipher_bmsg), str(cipher_bmsg), bmsg))
+            # self.log.debug("decrypted {} chars: {} to {}".format(len(cipher_bmsg), str(cipher_bmsg), bmsg))
         else:
             bmsg = b''
         return bmsg
@@ -47,6 +47,20 @@ class Encrypter:
 def generateAorB():
 	# return random.randint(2048,4096)
     return random.randint(16,32)
+	# return random.getrandbits(256)
+	
+def gToPower(pow,g):
+    if pow<0:
+        pow=-1*pow
+        return gToPower(pow,g)
+    elif pow==0:
+        return 1
+    elif pow==1:
+        return g
+    elif pow%2==0:
+        return gToPower(pow/2,g*g)
+    else:
+        return g*gToPower((pow-1)/2,g*g)
 
 def genStr(size=15, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for i in range(size))
