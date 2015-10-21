@@ -22,11 +22,14 @@ def add_header(bmsg):
     pad_bmsg = bmsg.zfill(pad_len + len(bmsg))
     return pad_bmsg
 
+class HeaderError(Exception):
+    pass
+
 def read_header(bmsg):
     header_idx = bmsg.find(HEADER_SUFFIX)
     if header_idx == -1:
-        raise EOFError('header suffix not found')
-    num_blocks = int(bmsg[:header_idx].decode(STRING_ENCODING))
+        raise HeaderError('header suffix not found')
+    num_blocks = int(bmsg[:header_idx])
     bmsg = bmsg[header_idx + len(HEADER_SUFFIX):]
     return num_blocks, bmsg
 
@@ -70,22 +73,28 @@ class Messenger:
             # read one block of data
             if self._blocks_remaining < 0:
                 # try to read a header
-                bmsg = self._encrypter.decrypt(self._raw_received[:BLOCK_SIZE])
-                num_blocks, msg_start = read_header(bmsg)
+                blocks_available = len(self._raw_received) // BLOCK_SIZE
+                bmsg = self._encrypter.decrypt(self._raw_received[:blocks_available * BLOCK_SIZE])
+                try:
+                    num_blocks, msg_start = read_header(bmsg)
+                except HeaderError as e:
+                    # incomplete header.. try again next time
+                    break
+
                 self._msg_out = [msg_start.decode(STRING_ENCODING)]
-                self._blocks_remaining = num_blocks - 1
+                self._blocks_remaining = num_blocks - blocks_available
+                self._raw_received = self._raw_received[BLOCK_SIZE * blocks_available:]
             elif self._blocks_remaining > 0:  # body of a message
                 bmsg = self._encrypter.decrypt(self._raw_received[:BLOCK_SIZE])
                 self._msg_out.append(bmsg.decode(STRING_ENCODING))
                 self._blocks_remaining -= 1
-            self._raw_received = self._raw_received[BLOCK_SIZE:]
+                self._raw_received = self._raw_received[BLOCK_SIZE:]
 
         if self._blocks_remaining == 0:
             next_msg = ''.join(self._msg_out)
             self.log.info("msg received: " + next_msg)
             self._blocks_remaining = -1
             return next_msg
-
 
         return ''
 

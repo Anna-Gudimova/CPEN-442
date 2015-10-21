@@ -6,7 +6,7 @@ from tkinter import ttk
 
 #App Libs
 import logging
-from crypto import encrypt, decrypt, generate_keystream, generate_init_vector, generateAorB
+from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr
 from messenger import Messenger
 import socket
 import sys
@@ -247,7 +247,7 @@ class Gui:
         # Get any new messages
         newMsg = self.session.checkReceivedMessages()
 
-        if not newMsg == 0:
+        if not newMsg == "":
 
             # Add the message to the text widget to view
             self.postMessage("Remote User: ", str(newMsg))
