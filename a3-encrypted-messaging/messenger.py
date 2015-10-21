@@ -29,7 +29,7 @@ def read_header(bmsg):
     header_idx = bmsg.find(HEADER_SUFFIX)
     if header_idx == -1:
         raise HeaderError('header suffix not found')
-    num_blocks = int(bmsg[:header_idx].decode(STRING_ENCODING))
+    num_blocks = int(bmsg[:header_idx])
     bmsg = bmsg[header_idx + len(HEADER_SUFFIX):]
     return num_blocks, bmsg
 
