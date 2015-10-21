@@ -251,7 +251,6 @@ class Gui:
 
             # Add the message to the text widget to view
             self.postMessage("Remote User: ", str(newMsg))
-            print("msg: " + str(newMsg) + "\n")
             
         # Schedule this to be called again 
         self.root.after(self.POLL_DELAY_MS, self.checkReceivedMessageQueue)

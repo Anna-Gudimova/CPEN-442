@@ -1,4 +1,3 @@
-from __future__ import print_function
 __author__ = 'andrew'
 
 # run with python 3.4.3
@@ -16,16 +15,11 @@ import ctypes
 import queue
 
 
-
-print = lambda x: sys.stdout.write("%s\n" % x)
-
 MESSAGE_ENCODING = 'utf-8'
 
 IS_SERVER = 1
 IS_CLIENT = 0
 
-MODE_CLIENT = 'c'
-MODE_SERVER = 's'
 
 ## IV generated for each new msg..decrypt requires same IV
 iv = generate_init_vector()
