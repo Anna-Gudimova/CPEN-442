@@ -3,6 +3,7 @@ __author__ = 'andrew'
 #GUI Libs
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 
 #App Libs
 import logging
@@ -47,7 +48,6 @@ class Gui:
     SENT_MESSAGE_DEFAULT = "You have not received any messages yet."
     MSG_INSPECTOR_DEFAULT = "You may expand a messages content here."
     SEND_BTN_TXT = "Send"
-    CONTINUE_BTN_TXT = "Continue"
     POLL_DELAY_MS = 150
 
 
@@ -58,7 +58,7 @@ class Gui:
         self.masterKey = ""
         self.rawMsg = ""
         self.errorMessage = ""
-        self.g=-1
+        self.isPaused = False
 
         # List to hold references to all the current widgets
         self.widgets = []
@@ -132,6 +132,7 @@ class Gui:
         c = ttk.Button(parentFrame, text=self.CLIENT_BTN, command= lambda: self.initClientGUI(parentFrame))
         c.grid(column=3, row=5, sticky=W)
         self.widgets.append(c)
+        #self.pause()
 
     """
     Add necessary UI elements for the client configuration options. 
@@ -208,7 +209,7 @@ class Gui:
         
         # Create a new thread to run the session manager
         try:
-            self.session = SessionManager(int(self.port), self.ip, self.masterKey)
+            self.session = SessionManager(int(self.port), self.ip, self.masterKey, self.pause)
             # TODO: Add a timer that polls the queue every x ms
             self.root.after(self.POLL_DELAY_MS, self.checkReceivedMessageQueue)
         except: 
@@ -237,8 +238,6 @@ class Gui:
         self.sendBtn = ttk.Button(parentFrame, text=self.SEND_BTN_TXT, command=self.sendMessage)
         self.sendBtn.grid(column=7, row=1, padx=10, pady=10)
 
-        #self.continueBtn = ttk.Button(parentFrame, text=self.CONTINUE_BTN_TXT, command=self.sendMessage)
-        #self.continueBtn.grid(column=7, row=1, padx=10, pady=10)
 
     """
     Polls the receivedMessageQueue to add messages to the chat window.
@@ -292,6 +291,12 @@ class Gui:
         self.receivedMessageTextWidget.config(state=NORMAL) # make widget read/write
         self.receivedMessageTextWidget.insert('1.0', userName + ": " + str(msg) + "\n\n")
         self.receivedMessageTextWidget.config(state=DISABLED) #make widget read only again
+
+    """
+
+    """
+    def pause(self):
+        messagebox.showinfo("Continue?", "Press OK when you're ready to continue.")
 
     """
     Remove all current widgets in the GUI in order to update the contents of the screen.

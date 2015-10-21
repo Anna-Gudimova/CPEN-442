@@ -36,16 +36,18 @@ def read_header(bmsg):
 class Messenger:
     # sends/receives messages of text with encoded header describing message size
 
-    def __init__(self, socket, encrypter):
+    def __init__(self, socket, encrypter, continueHandler):
         self._s = socket
         self._encrypter = encrypter
         self.log = logging.getLogger(__name__)
+        self.continueHandler = continueHandler
 
         self._raw_received = b''
         self._blocks_remaining = -1
         self._msg_out = []
 
     def send(self, msg):
+        self.continueHandler()
         bmsg = msg.encode(STRING_ENCODING)
         bmsg = add_header(bmsg)
         bmsg = self._encrypter.encrypt(bmsg)
