@@ -47,7 +47,7 @@ class Encrypter:
 def generateAorB():
 	# return random.randint(2048,4096)
     #return random.randint(16,32)
-	return random.getrandbits(256)
+	return random.getrandbits(16)
 
 def genStr(size=15, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for i in range(size))
