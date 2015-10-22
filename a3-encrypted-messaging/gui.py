@@ -212,7 +212,7 @@ class Gui:
             self.errorMessage = "Whoops! That IP wasn't ascii. We're not sure what you're up to, but we don't like it :) #sorrynotsorry\n"
             self.showErrorMessage("IP not ASCII", self.errorMessage)
             self.clearScreen()
-            self.initWelcomeScreenGUI()
+            self.initWelcomeScreenGUI(parentFrame)
             return
 
         try:
@@ -221,7 +221,7 @@ class Gui:
             self.errorMessage = "Whoops! That port wasn't ascii. We're not sure what you're up to, but we don't like it :) #sorrynotsorry\n"
             self.showErrorMessage("Port not ASCII", self.errorMessage)
             self.clearScreen()
-            self.initWelcomeScreenGUI()
+            self.initWelcomeScreenGUI(parentFrame)
             return
 
         try:
@@ -230,7 +230,7 @@ class Gui:
             self.errorMessage = "Whoops! That key wasn't ascii. We're not sure what you're up to, but we don't like it :) #sorrynotsorry\n"
             self.showErrorMessage("Key not ASCII", self.errorMessage)
             self.clearScreen()
-            self.initWelcomeScreenGUI()
+            self.initWelcomeScreenGUI(parentFrame)
             return
 
         # If in server mode, the ip is irrelevant
@@ -316,10 +316,8 @@ class Gui:
             self.session.send(currentMsg)
         except: # Catch disconnections
             self.errorMessage = "Whoops! Look like the connection to the server was lost. Try again.\n"
-            self.clearScreen()
-            self.initWelcomeScreenGUI()
-            return
-
+            self.showErrorMessage("Session Disconnected", self.errorMessage)
+            sys.exit()
 
     """
     Adds a message to the message sent queue so that the session messenger can send it.
