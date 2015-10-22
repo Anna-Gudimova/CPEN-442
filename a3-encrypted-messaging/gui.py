@@ -33,7 +33,7 @@ class Gui:
     IP_PLACEHOLDER_TXT = '127.0.0.1'
     PORT_LBL = "Port"
     PORT_PLACEHOLDER_TXT = "8990"
-    MASTERKEY_LBL = "Master Key"
+    MASTERKEY_LBL = "Shared Secret Value"
     MASTERKEY_PLACEHOLDER_TXT = "Make one up, lazy"
     OK_BTN = "OK"
 
