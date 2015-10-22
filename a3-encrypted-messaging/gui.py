@@ -6,19 +6,10 @@ from tkinter import ttk
 from tkinter import messagebox
 
 #App Libs
-import logging
-from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr
-from messenger import Messenger
 from sessionmanager import *
 
-import socket
-
 import sys
-from threading import Thread
 import traceback
-import queue
-from threading import Timer
-
 
 
 class Gui:

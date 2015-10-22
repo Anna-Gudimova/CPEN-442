@@ -2,17 +2,12 @@ __author__ = 'andrew'
 
 # run with python 3.4.3
 
-
-import argparse
 import logging
-from crypto import Encrypter, generate_keystream, generate_init_vector, generateAorB, genStr, IV_LENGTH
-from messenger import Messenger
+from os import urandom
 import socket
-import sys
-from threading import Thread
-from threading import Timer
-import ctypes
-import queue
+
+from crypto import Encrypter, generate_keystream, generateAorB, genStr
+from messenger import Messenger
 
 
 MESSAGE_ENCODING = 'utf-8'
@@ -20,11 +15,10 @@ MESSAGE_ENCODING = 'utf-8'
 IS_SERVER = 1
 IS_CLIENT = 0
 
+IV_LENGTH = 16
 CHALLENGE_LENGTH = 16
 p = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF
 g = 2
-
-## IV generated for each new msg..decrypt requires same IV
 
 
 class SessionManager:
@@ -35,7 +29,6 @@ class SessionManager:
         self.port = port
         self.ip_address = ip_address
         self.master_key = generate_keystream(key)  # if the master key is too short, make it longer
-        self.iv = generate_init_vector()
         self.log = logging.getLogger(__name__)
         self.continueHandler = continueHandler
 
@@ -43,7 +36,7 @@ class SessionManager:
         self.reset_messenger()
 
     def generate_and_send_iv(self, session_socket):
-        iv = generate_init_vector() # the server should generate a random iv
+        iv = urandom(16)
 
         self.continueHandler(iv)
         # send iv over socket first!
@@ -57,7 +50,6 @@ class SessionManager:
         return iv
 
     def receive_iv(self, session_socket):
-        bytes_in = 0
         iv = b''
         while len(iv) < IV_LENGTH:
             chunk = session_socket.recv(IV_LENGTH - len(iv))
@@ -171,22 +163,19 @@ class SessionManager:
             return nextReceivedMessage
 
         except Exception as e:
-            self.log.exception("Session closed: {}".format(e))
-            if self.operationMode is IS_SERVER:
-                session.reset_messenger()   
+            self.log.warning("Session closed: {}".format(e))
+            self.reset_messenger()
         # Return 0 as default
         return 0         
 
     def send(self, msg):
         self._messenger.send(msg)
-        
 
     def recv(self):
         data_in = self._messenger.recv()
         if len(data_in) > 0:
             self.log.info('received data: ' + data_in)
         return data_in
-
 
     def close(self):
         self._messenger.close()

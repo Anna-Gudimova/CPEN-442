@@ -1,12 +1,9 @@
 from Crypto.Cipher import AES
-from os import urandom
 import random
 import string
 import hashlib
-from logging import getLogger
 
 BLOCK_SIZE = 16
-IV_LENGTH = 16
 
 def generate_keystream(key):
     # improve key security by generating keystream using sha256. Good if key is short
@@ -14,11 +11,6 @@ def generate_keystream(key):
     s.update(key.encode('utf-8'))
     keystream = s.digest()
     return keystream
-
-def generate_init_vector():
-    # TODO Replace with urandom
-    iv = urandom(16)
-    return iv
 
 class Encrypter:
     def __init__(self, key, iv):
@@ -46,14 +38,13 @@ class Encrypter:
         return bmsg
 
 def generateAorB():
-	return random.getrandbits(256)
+    return random.getrandbits(256)
 
 def genStr(size=15, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for i in range(size))
-	
-def quick_test():
 
-    IV = generate_init_vector()
+def quick_test():
+    IV = b'asdfasdfasdfasdf'
     print("Injection Vector: "+ str(IV))
 
     key = "test**965"
@@ -62,13 +53,12 @@ def quick_test():
     encrypter = Encrypter(keystream, IV)
 
     plain = "Hello I am Alice!"
-    print("Plain text: "+plain)
+    print("Plain text: " + plain)
 
     cipher = encrypter.encrypt(plain)
-    #print("Cipher text: "+cipher.decode('utf-8'))
 
     decipher = encrypter.decrypt(cipher)
-    print("Decrypted: %s"%(decipher))
+    print("Decrypted: %s" % (decipher))
 
 if __name__ == "__main__":
     quick_test()

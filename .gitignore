@@ -1,3 +1,4 @@
 .idea
 *.pyc
+/a3-encrypted-messaging/log.txt
 ece-security.iml
