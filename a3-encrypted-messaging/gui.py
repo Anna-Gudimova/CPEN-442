@@ -43,7 +43,6 @@ class Gui:
 
     #Messaging Screen
     SENT_MESSAGE_DEFAULT = "Begin: You have not received any messages yet. The textbox grows upward."
-    MSG_INSPECTOR_DEFAULT = "You may expand a messages content here."
     CURRENT_USER_LBL = "Me"
     REMOTE_USER_LBL = "Remote User"
     SEND_BTN_TXT = "Send"
@@ -249,6 +248,7 @@ class Gui:
             self.errorMessage = "Whoops! We couldn't connect you. #sorrynotsorry"
             self.clearScreen()
             self.initWelcomeScreenGUI(parentFrame) # Try again from main screen
+            return
 
         # Session Manager thread created, so initialise the Chat GUI
         self.clearScreen()
@@ -310,8 +310,15 @@ class Gui:
         self.sentMessageTextWidget.delete('1.0', 'end')
         # Add the message to the received text widget for historical purposes
         self.postMessage(self.CURRENT_USER_LBL, currentMsg)
+
         # Send the message through the session manager
-        self.session.send(currentMsg)
+        try:
+            self.session.send(currentMsg)
+        except: # Catch disconnections
+            self.errorMessage = "Whoops! Look like the connection to the server was lost. Try again.\n"
+            self.clearScreen()
+            self.initWelcomeScreenGUI()
+            return
 
 
     """
