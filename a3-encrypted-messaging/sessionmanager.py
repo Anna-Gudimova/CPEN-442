@@ -6,7 +6,7 @@ import logging
 from os import urandom
 import socket
 
-from crypto import Encrypter, generate_keystream, generateAorB, genStr
+from encrypter import Encrypter, generate_keystream, generateAorB, genStr
 from messenger import Messenger
 
 

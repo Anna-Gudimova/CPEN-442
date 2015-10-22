@@ -2,7 +2,7 @@ __author__ = 'andrew'
 
 import logging
 import math
-from crypto import BLOCK_SIZE
+from encrypter import BLOCK_SIZE
 from select import select
 
 STRING_ENCODING = 'utf-8'
