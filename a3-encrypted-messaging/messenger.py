@@ -84,11 +84,13 @@ class Messenger:
                 except HeaderError as e:
                     # incomplete header.. try again next time
                     break
+                self.log.info("received: " + str(self._raw_received[:blocks_available * BLOCK_SIZE]))
 
                 self._msg_out = [msg_start.decode(STRING_ENCODING)]
                 self._blocks_remaining = num_blocks - blocks_available
                 self._raw_received = self._raw_received[BLOCK_SIZE * blocks_available:]
             elif self._blocks_remaining > 0:  # body of a message
+                self.log.info("received: " + str(self._raw_received[:BLOCK_SIZE]))
                 bmsg = self._encrypter.decrypt(self._raw_received[:BLOCK_SIZE])
                 self._msg_out.append(bmsg.decode(STRING_ENCODING))
                 self._blocks_remaining -= 1
@@ -96,7 +98,6 @@ class Messenger:
 
         if self._blocks_remaining == 0:
             next_msg = ''.join(self._msg_out)
-            self.log.info("msg received: " + next_msg)
             self._blocks_remaining = -1
             return next_msg
 

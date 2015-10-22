@@ -5,12 +5,11 @@ import hashlib
 
 BLOCK_SIZE = 16
 
-def generate_keystream(key):
-    # improve key security by generating keystream using sha256. Good if key is short
+def create_key(secret_value):
     s = hashlib.sha256()
-    s.update(key.encode('utf-8'))
-    keystream = s.digest()
-    return keystream
+    s.update(secret_value.encode('utf-8'))
+    hash_value = s.digest()
+    return hash_value
 
 class Encrypter:
     def __init__(self, key, iv):
@@ -48,7 +47,7 @@ def quick_test():
     print("Injection Vector: "+ str(IV))
 
     key = "test**965"
-    keystream = generate_keystream(key)
+    keystream = create_key(key)
 
     encrypter = Encrypter(keystream, IV)
 
