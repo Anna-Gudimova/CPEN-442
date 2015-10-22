@@ -3,7 +3,7 @@ import random
 import string
 import hashlib
 
-BLOCK_SIZE = 16
+BLOCK_SIZE = 32
 
 def create_key(secret_value):
     s = hashlib.sha256()
